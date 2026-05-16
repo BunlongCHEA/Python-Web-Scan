@@ -10,19 +10,21 @@ from .models import ScanJob, Vulnerability
 from .utils import WAPITI_MODULES
 
 
-@shared_task(bind=True)
-def run_wapiti_scan(self, scan_id: str):
-    """Run wapiti3 as subprocess, parse JSON report, save results."""
-    from .models import ScanJob  # local import avoids circular
+# ── Synchronous runner (used by threading in views.py) ───────────────────
+def run_scan_sync(scan_id: str):
+    """
+    Runs wapiti3 synchronously in a background thread.
+    No Celery / Redis required.
+    """
+    # from .models import ScanJob, Vulnerability
 
     job = ScanJob.objects.get(id=scan_id)
     job.status = 'running'
     job.save()
 
     report_path = os.path.join(settings.SCAN_REPORTS_DIR, f"{scan_id}.json")
-
-    # Build wapiti command
     modules = ','.join(job.modules) if job.modules else 'all'
+
     cmd = [
         'wapiti',
         '-u', job.target_url,
@@ -32,7 +34,7 @@ def run_wapiti_scan(self, scan_id: str):
         '--flush-session',
         '--max-depth', '3',
         '--max-links-per-page', '50',
-        '--max-scan-time', '300',   # 5 min safety cap
+        '--max-scan-time', '300',
     ]
 
     try:
@@ -49,7 +51,6 @@ def run_wapiti_scan(self, scan_id: str):
             job.save()
             return
 
-        # Parse JSON report
         with open(report_path, 'r', encoding='utf-8') as f:
             report_data = json.load(f)
 
@@ -57,7 +58,6 @@ def run_wapiti_scan(self, scan_id: str):
         job.status = 'done'
         job.save()
 
-        # Persist individual vulnerabilities
         _save_vulnerabilities(job, report_data)
 
     except subprocess.TimeoutExpired:
@@ -68,6 +68,12 @@ def run_wapiti_scan(self, scan_id: str):
         job.status = 'failed'
         job.error_msg = str(exc)
         job.save()
+
+
+# ── Celery task (kept for when Redis is available) ───────────────────────
+@shared_task(bind=True)
+def run_wapiti_scan(self, scan_id: str):
+    run_scan_sync(scan_id)
 
 
 def _save_vulnerabilities(job: ScanJob, report: dict):

@@ -34,7 +34,7 @@ def start_scan(request):
         modules=selected_modules,
     )
 
-    # ✅ Use threading — NO Celery/.delay() — no broker connection needed
+    # Use threading for no broker connection needed
     from .tasks import run_scan_sync
     thread = threading.Thread(
         target=run_scan_sync,
