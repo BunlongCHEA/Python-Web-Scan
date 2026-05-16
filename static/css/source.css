@@ -1,0 +1,59 @@
+/* ── Tailwind v4 entry point ── */
+@import "tailwindcss";
+
+/* ── Custom design tokens (v4 uses @theme instead of tailwind.config.js) ── */
+@theme {
+  --color-surface:        #0f172a;
+  --color-surface-card:   #1e293b;
+  --color-surface-border: #334155;
+
+  --color-brand-50:  #f0f9ff;
+  --color-brand-900: #0c1a2e;
+
+  --animate-spin-slow:  spin 2s linear infinite;
+  --animate-pulse-fast: pulse 1s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+
+/* ── Reusable component classes ── */
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5
+           text-sm font-semibold text-white shadow hover:bg-red-500
+           focus:outline-none focus:ring-2 focus:ring-red-400 transition;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-lg border border-slate-500
+           px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700
+           focus:outline-none transition;
+  }
+
+  .card {
+    @apply rounded-xl border border-slate-700 bg-slate-800 shadow-lg;
+  }
+
+  .form-input {
+    @apply w-full rounded-lg border border-slate-600 bg-slate-900
+           px-4 py-2.5 text-slate-100 placeholder-slate-500
+           focus:border-sky-500 focus:outline-none focus:ring-1
+           focus:ring-sky-500 transition;
+  }
+
+  .badge {
+    @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold
+           uppercase tracking-wide;
+  }
+
+  /* Severity badges */
+  .badge-critical { @apply bg-red-700     text-red-100; }
+  .badge-high     { @apply bg-orange-600  text-orange-100; }
+  .badge-medium   { @apply bg-yellow-600  text-yellow-100; }
+  .badge-low      { @apply bg-slate-600   text-slate-200; }
+  .badge-info     { @apply bg-sky-700     text-sky-100; }
+
+  /* Scan status badges */
+  .badge-pending  { @apply bg-slate-600   text-slate-200; }
+  .badge-running  { @apply bg-yellow-500  text-yellow-950; }
+  .badge-done     { @apply bg-green-600   text-green-100; }
+  .badge-failed   { @apply bg-red-600     text-red-100; }
+}

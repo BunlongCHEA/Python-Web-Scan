@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+{% load static %}
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{% block title %}Wapiti Web Scanner{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/tailwind.css' %}"/>
+</head>
+<body class="min-h-full bg-slate-900 text-slate-200 antialiased">
+
+  <!-- Navbar -->
+  <nav class="sticky top-0 z-50 border-b border-slate-700 bg-slate-800/90 backdrop-blur">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
+      <a href="{% url 'index' %}" class="flex items-center gap-2 text-lg font-bold text-white">
+        <!-- shield icon (inline SVG, no icon font needed) -->
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0
+                   0112 2.944a11.955 11.955 0 01-8.618 3.04
+                   A12.02 12.02 0 003 9c0 5.591 3.824 10.29
+                   9 11.622 5.176-1.332 9-6.03 9-11.622
+                   0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        Wapiti Web Scanner
+      </a>
+      <div class="flex items-center gap-4 text-sm text-slate-400">
+        <a href="{% url 'index' %}" class="hover:text-white transition">Home</a>
+        <a href="/admin/" class="hover:text-white transition">Admin</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  {% if messages %}
+  <div class="mx-auto max-w-7xl px-6 pt-4">
+    {% for message in messages %}
+    <div class="mb-2 rounded-lg border
+      {% if message.tags == 'error' %}border-red-600 bg-red-950 text-red-300
+      {% else %}border-green-600 bg-green-950 text-green-300{% endif %}
+      px-4 py-3 text-sm">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Page content -->
+  <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="mt-16 border-t border-slate-800 py-6 text-center text-xs text-slate-600">
+    Wapiti Web Scanner &mdash; powered by
+    <a href="https://wapiti-scanner.github.io/" target="_blank"
+       class="text-sky-600 hover:underline">wapiti3</a>
+    &amp; Django
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

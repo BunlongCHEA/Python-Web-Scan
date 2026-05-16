@@ -1,0 +1,67 @@
+{% extends "scanner/base.html" %}
+{% block title %}Scanning… — Wapiti{% endblock %}
+
+{% block content %}
+<div class="flex min-h-[70vh] items-center justify-center">
+  <div class="card w-full max-w-lg p-10 text-center">
+
+    <!-- Animated ring -->
+    <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center
+                rounded-full border-4 border-slate-700">
+      <svg class="h-10 w-10 animate-spin text-red-500"
+           xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10"
+                stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8v8H4z"/>
+      </svg>
+    </div>
+
+    <h2 class="mb-2 text-xl font-bold text-white">Scanning in progress…</h2>
+    <p class="mb-1 break-all text-sm text-sky-400">{{ job.target_url }}</p>
+    <p class="mb-6 text-xs text-slate-500">
+      This may take a few minutes depending on selected modules.
+    </p>
+
+    <!-- Progress bar -->
+    <div class="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-slate-700">
+      <div class="h-full w-full origin-left animate-pulse rounded-full bg-red-500"></div>
+    </div>
+
+    <!-- Live status badge -->
+    <span id="statusBadge"
+          class="badge badge-{{ job.status }} text-sm px-4 py-1">
+      {{ job.status }}
+    </span>
+
+    <p class="mt-6 text-xs text-slate-600">
+      Page auto-redirects when scan completes.
+    </p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const scanId = "{{ job.id }}";
+
+function poll() {
+  fetch(`/scan/${scanId}/status/`)
+    .then(r => r.json())
+    .then(data => {
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = data.status;
+      badge.className = 'badge badge-' + data.status + ' text-sm px-4 py-1';
+
+      if (data.status === 'done' || data.status === 'failed') {
+        window.location.href = `/scan/${scanId}/`;
+      } else {
+        setTimeout(poll, 3000);
+      }
+    })
+    .catch(() => setTimeout(poll, 5000));
+}
+
+setTimeout(poll, 3000);
+</script>
+{% endblock %}

@@ -1,0 +1,183 @@
+{% extends "scanner/base.html" %}
+{% block title %}New Scan — Wapiti Web Scanner{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero / Scan Form ──────────────────────────────────── -->
+<div class="mx-auto mb-12 max-w-3xl">
+  <div class="card p-6 sm:p-8">
+
+    <h2 class="mb-1 text-2xl font-bold text-white">Start a Vulnerability Scan</h2>
+    <p class="mb-6 text-sm text-slate-400">
+      Enter a URL, choose modules (or auto-suggest), then hit Scan.
+    </p>
+
+    <form method="post" action="{% url 'start_scan' %}" id="scanForm">
+      {% csrf_token %}
+
+      <!-- Target URL -->
+      <div class="mb-5">
+        <label for="targetUrl" class="mb-1.5 block text-sm font-semibold text-slate-300">
+          Target URL
+        </label>
+        <input type="url" name="target_url" id="targetUrl"
+               class="form-input"
+               placeholder="https://example.com" required/>
+        <p id="suggestLoading"
+           class="mt-1.5 hidden text-xs text-sky-400 animate-pulse">
+          ✦ Detecting best modules for this URL…
+        </p>
+      </div>
+
+      <!-- Module Grid -->
+      <div class="mb-6">
+        <div class="mb-3 flex flex-wrap items-center gap-2">
+          <span class="text-sm font-semibold text-slate-300">Scan Modules</span>
+          <span id="selectedCount"
+                class="badge bg-slate-700 text-slate-300">0 selected</span>
+
+          <button type="button" id="selectSuggested"
+                  class="btn-secondary text-xs py-1 px-3 border-sky-600 text-sky-400 hover:bg-sky-900">
+            ✨ Auto-Suggest
+          </button>
+          <button type="button" onclick="selectAll()"
+                  class="btn-secondary text-xs py-1 px-3 border-green-700 text-green-400 hover:bg-green-950">
+            Select All
+          </button>
+          <button type="button" onclick="clearAll()"
+                  class="btn-secondary text-xs py-1 px-3">
+            Clear
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3" id="moduleGrid">
+          {% for key, meta in all_modules.items %}
+          <label for="mod_{{ key }}"
+                 class="module-item flex cursor-pointer items-start gap-3 rounded-lg
+                        border border-slate-700 bg-slate-900 p-3
+                        transition hover:border-slate-500 hover:bg-slate-800
+                        has-[:checked]:border-sky-600 has-[:checked]:bg-slate-800">
+            <input type="checkbox" name="modules" value="{{ key }}"
+                   id="mod_{{ key }}" class="module-checkbox mt-0.5 accent-sky-500"/>
+            <div class="min-w-0">
+              <p class="truncate text-sm font-semibold text-slate-200">
+                {{ meta.label }}
+                <span class="badge badge-{{ meta.severity }} ml-1">{{ meta.severity }}</span>
+              </p>
+              <p class="mt-0.5 text-xs text-slate-500">{{ meta.desc }}</p>
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary w-full justify-center py-3 text-base">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555
+                   7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1
+                   1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+        </svg>
+        Start Scan
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ── Recent Scans ──────────────────────────────────────── -->
+{% if recent_scans %}
+<section>
+  <h3 class="mb-4 text-lg font-semibold text-white">Recent Scans</h3>
+  <div class="card overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-slate-700 bg-slate-800/60 text-xs
+                     uppercase tracking-wider text-slate-400">
+            <th class="px-4 py-3 text-left">Target URL</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">Modules</th>
+            <th class="px-4 py-3 text-left">Date</th>
+            <th class="px-4 py-3 text-left">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-700/60">
+          {% for scan in recent_scans %}
+          <tr class="hover:bg-slate-800/40 transition">
+            <td class="max-w-xs truncate px-4 py-3 font-medium text-slate-200">
+              {{ scan.target_url }}
+            </td>
+            <td class="px-4 py-3">
+              <span class="badge badge-{{ scan.status }}">{{ scan.status }}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-400">
+              {% if scan.modules %}
+                {{ scan.modules|join:", " }}
+              {% else %}
+                <span class="text-slate-600">all</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-slate-400">
+              {{ scan.created_at|date:"Y-m-d H:i" }}
+            </td>
+            <td class="px-4 py-3">
+              <a href="{% url 'scan_detail' scan.id %}"
+                 class="btn-secondary py-1 px-3 text-xs">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% else %}
+<div class="rounded-xl border border-dashed border-slate-700 py-16 text-center text-slate-500">
+  No scans yet. Enter a URL above to get started.
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* ── Module checkbox counter ── */
+const checkboxes = document.querySelectorAll('.module-checkbox');
+
+function updateCount() {
+  const n = document.querySelectorAll('.module-checkbox:checked').length;
+  document.getElementById('selectedCount').textContent = n + ' selected';
+}
+checkboxes.forEach(c => c.addEventListener('change', updateCount));
+updateCount();
+
+function selectAll()  { checkboxes.forEach(c => c.checked = true);  updateCount(); }
+function clearAll()   { checkboxes.forEach(c => c.checked = false); updateCount(); }
+
+/* ── Auto-suggest via AJAX ── */
+let debounce;
+document.getElementById('targetUrl').addEventListener('input', function () {
+  clearTimeout(debounce);
+  const url = this.value.trim();
+  if (!url) return;
+  debounce = setTimeout(() => {
+    document.getElementById('suggestLoading').classList.remove('hidden');
+    fetch(`/api/suggest-modules/?url=${encodeURIComponent(url)}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('suggestLoading').classList.add('hidden');
+        window._suggested = data.suggested || [];
+      });
+  }, 600);
+});
+
+document.getElementById('selectSuggested').addEventListener('click', () => {
+  clearAll();
+  (window._suggested || []).forEach(mod => {
+    const cb = document.getElementById('mod_' + mod);
+    if (cb) cb.checked = true;
+  });
+  updateCount();
+});
+</script>
+{% endblock %}
