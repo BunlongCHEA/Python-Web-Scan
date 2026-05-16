@@ -1,0 +1,6 @@
+wapiti_web/settings.py
+.django-tailwind-cli/
+.vscode/
+css/
+db.sqlite3
+static/css/tailwind.css

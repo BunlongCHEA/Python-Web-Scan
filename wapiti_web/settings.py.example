@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-&7i58#%&93%ir3f0fc2(v9!_np_ug37l^-2n45a!ae#8jtx!k&'
+SECRET_KEY = 'AUTO-GENERATED-WHEN-CREATE-PROJECT'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -133,7 +133,7 @@ TAILWIND_CLI_DIST_CSS = 'css/tailwind.css'        # output (inside static/)
 
 
 # ── Celery
-CELERY_BROKER_URL = 'redis://default:ul6GAn92ARa8xPCgbmO4WynkcOPDRgfz@redis-16904.crce194.ap-seast-1-1.ec2.cloud.redislabs.com:16904'
+CELERY_BROKER_URL = 'redis://USER:PASS@HOST:16904/DB-INDEX'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_CACHE_BACKEND = 'django-cache'
 
