@@ -7,6 +7,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_POST
 
+from scanner.tasks import run_wapiti_scan
+
 from .models import ScanJob, Vulnerability
 from .utils import WAPITI_MODULES, suggest_modules, severity_badge_color
 
@@ -33,15 +35,18 @@ def start_scan(request):
         target_url=target_url,
         modules=selected_modules,
     )
+    
+    # Use Celery for real async processing (requires Redis broker)
+    run_wapiti_scan.delay(str(job.id))
 
     # Use threading for no broker connection needed
-    from .tasks import run_scan_sync
-    thread = threading.Thread(
-        target=run_scan_sync,
-        args=(str(job.id),),
-        daemon=True,
-    )
-    thread.start()
+    # from .tasks import run_scan_sync
+    # thread = threading.Thread(
+    #     target=run_scan_sync,
+    #     args=(str(job.id),),
+    #     daemon=True,
+    # )
+    # thread.start()
 
     return redirect('scan_running', scan_id=job.id)
 

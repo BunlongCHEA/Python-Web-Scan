@@ -73,10 +73,14 @@ python manage.py tailwind watch
     - debug
 
 ```bash
-celery -A wapiti_web worker --loglevel=error
+# Windows
+celery -A wapiti_web worker --loglevel=info -P solo
+
+# Linux/Mac
+celery -A wapiti_web worker --loglevel=info
 ```
 
 - Terminal 3 — Django dev server
 ```bash
-python manage.py runserver
+python manage.py runserver 8080
 ```
