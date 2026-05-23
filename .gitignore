@@ -7,5 +7,5 @@ static/css/tailwind.css
 .django_tailwind_cli/
 scan_reports/
 scanner/__pycache__/
-migrations/__pycache__/
+scanner/migrations/__pycache__/
 wapiti_web/__pycache__/

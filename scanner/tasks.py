@@ -32,9 +32,9 @@ def run_scan_sync(scan_id: str):
         '-f', 'json',
         '-o', report_path,
         '--flush-session',
-        '--max-depth', '3',
+        '-d', '3',
         '--max-links-per-page', '50',
-        '--max-scan-time', '300',
+        '--max-scan-time', '3600',
     ]
 
     try:
@@ -42,7 +42,7 @@ def run_scan_sync(scan_id: str):
             cmd,
             capture_output=True,
             text=True,
-            timeout=360,
+            timeout=3600,
         )
 
         if result.returncode != 0:

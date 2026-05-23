@@ -64,15 +64,28 @@
       </span>
     </h3>
 
-    <!-- Severity filter -->
+    <!-- Severity filter — hardcoded (Django has no built-in split filter) -->
     <div class="flex flex-wrap gap-1" id="severityFilters">
-      {% for sev in "critical,high,medium,low,info"|split:"," %}
-      <button onclick="filterSeverity('{{ sev }}')"
-              data-sev="{{ sev }}"
-              class="badge badge-{{ sev }} cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
-        {{ sev }}
+      <button onclick="filterSeverity('critical')" data-sev="critical"
+              class="badge badge-critical cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
+        critical
       </button>
-      {% endfor %}
+      <button onclick="filterSeverity('high')" data-sev="high"
+              class="badge badge-high cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
+        high
+      </button>
+      <button onclick="filterSeverity('medium')" data-sev="medium"
+              class="badge badge-medium cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
+        medium
+      </button>
+      <button onclick="filterSeverity('low')" data-sev="low"
+              class="badge badge-low cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
+        low
+      </button>
+      <button onclick="filterSeverity('info')" data-sev="info"
+              class="badge badge-info cursor-pointer opacity-60 hover:opacity-100 transition filter-btn">
+        info
+      </button>
       <button onclick="filterSeverity('all')"
               class="badge bg-slate-700 text-slate-300 cursor-pointer hover:bg-slate-600 transition">
         all
@@ -111,7 +124,6 @@
           <td class="px-4 py-3 font-mono text-xs text-slate-400">{{ v.parameter }}</td>
           <td class="px-4 py-3 text-xs text-slate-500">{{ v.wstg }}</td>
         </tr>
-        <!-- Expandable description row -->
         {% if v.description %}
         <tr class="finding-row bg-slate-900/40" data-sev="{{ v.severity }}">
           <td colspan="6" class="px-8 pb-3 pt-0 text-xs text-slate-400">
