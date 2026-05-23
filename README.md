@@ -1,30 +1,4 @@
-# I. Project Structure
-
-```bash
-wapiti_web/
-├── manage.py
-├── requirements.txt
-├── wapiti_web/
-│   ├── __init__.py
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-└── scanner/
-    ├── __init__.py
-    ├── models.py
-    ├── views.py
-    ├── urls.py
-    ├── tasks.py
-    ├── utils.py
-    └── templates/
-        └── scanner/
-            ├── base.html
-            ├── index.html
-            ├── scan_detail.html
-            └── scan_running.html
-```
-
-# II. Create and Start Project
+# I. Create and Start Project
 
 ### 1. Start Miniconda base to use Python and Install library
 
