@@ -3,13 +3,12 @@
 
 {% block content %}
 
-<!-- ── Hero / Scan Form ──────────────────────────────────── -->
 <div class="mx-auto mb-12 max-w-3xl">
   <div class="card p-6 sm:p-8">
 
     <h2 class="mb-1 text-2xl font-bold text-white">Start a Vulnerability Scan</h2>
     <p class="mb-6 text-sm text-slate-400">
-      Enter a URL, choose modules (or auto-suggest), then hit Scan.
+      Enter a URL, choose modules (or auto-suggest), configure scan options, then hit Scan.
     </p>
 
     <form method="post" action="{% url 'start_scan' %}" id="scanForm">
@@ -23,19 +22,144 @@
         <input type="url" name="target_url" id="targetUrl"
                class="form-input"
                placeholder="https://example.com" required/>
-        <p id="suggestLoading"
-           class="mt-1.5 hidden text-xs text-sky-400 animate-pulse">
+        <p id="suggestLoading" class="mt-1.5 hidden text-xs text-sky-400 animate-pulse">
           ✦ Detecting best modules for this URL…
         </p>
       </div>
+
+      <!-- ── Scan Speed Presets ── -->
+      <div class="mb-5">
+        <label class="mb-2 block text-sm font-semibold text-slate-300">
+          Speed Preset
+        </label>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick="applyPreset('quick')"
+                  class="btn-secondary text-xs px-4 py-1.5 border-green-700 text-green-400 hover:bg-green-950">
+            ⚡ Quick (2 min)
+          </button>
+          <button type="button" onclick="applyPreset('standard')"
+                  class="btn-secondary text-xs px-4 py-1.5 border-sky-700 text-sky-400 hover:bg-sky-950">
+            🔍 Standard (5 min)
+          </button>
+          <button type="button" onclick="applyPreset('deep')"
+                  class="btn-secondary text-xs px-4 py-1.5 border-orange-700 text-orange-400 hover:bg-orange-950">
+            🔬 Deep (15 min)
+          </button>
+        </div>
+        <p class="mt-1.5 text-xs text-slate-600">Presets auto-fill the advanced config below.</p>
+      </div>
+
+      <!-- ── Advanced Config (collapsible) ── -->
+      <details class="mb-6 rounded-lg border border-slate-700 bg-slate-900" id="advancedConfig">
+        <summary class="flex cursor-pointer items-center justify-between px-4 py-3
+                        text-sm font-semibold text-slate-300 hover:text-white transition select-none">
+          <span>⚙️ Advanced Scan Config</span>
+          <span class="text-xs text-slate-500">click to expand</span>
+        </summary>
+
+        <div class="grid grid-cols-1 gap-4 px-4 pb-5 pt-2 sm:grid-cols-2">
+
+          <!-- Scope -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Scope
+              <span class="ml-1 text-slate-600" title="Limits which URLs wapiti will crawl">ⓘ</span>
+            </label>
+            <select name="scope" id="cfg_scope"
+                    class="form-input text-sm py-2">
+              {% for val, label in scope_choices %}
+              <option value="{{ val }}" {% if val == 'folder' %}selected{% endif %}>
+                {{ label }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Crawl Depth -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Crawl Depth (-d)
+              <span class="ml-1 text-slate-600" title="How many levels deep to crawl. Lower = faster.">ⓘ</span>
+            </label>
+            <input type="number" name="scan_depth" id="cfg_depth"
+                   min="1" max="10" value="2"
+                   class="form-input text-sm py-2"/>
+            <p class="mt-1 text-xs text-slate-600">1–3 recommended</p>
+          </div>
+
+          <!-- Max Links per Page -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Max Links / Page
+              <span class="ml-1 text-slate-600" title="Limits links followed per page. Lower = faster.">ⓘ</span>
+            </label>
+            <input type="number" name="max_links" id="cfg_links"
+                   min="1" max="500" value="20"
+                   class="form-input text-sm py-2"/>
+          </div>
+
+          <!-- Attack Level -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Attack Level (-l)
+              <span class="ml-1 text-slate-600" title="1=normal, 2=aggressive (more payloads, slower)">ⓘ</span>
+            </label>
+            <select name="level" id="cfg_level" class="form-input text-sm py-2">
+              <option value="1" selected>1 — Normal</option>
+              <option value="2">2 — Aggressive (slower)</option>
+            </select>
+          </div>
+
+          <!-- Max Scan Time -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Max Scan Time (sec)
+              <span class="ml-1 text-slate-600" title="Total scan cap. 0 = unlimited.">ⓘ</span>
+            </label>
+            <input type="number" name="max_scan_time" id="cfg_scan_time"
+                   min="0" max="86400" value="180"
+                   class="form-input text-sm py-2"/>
+            <p class="mt-1 text-xs text-slate-600">0 = no limit</p>
+          </div>
+
+          <!-- Max Attack Time -->
+          <div>
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Max Attack Time / Module (sec)
+              <span class="ml-1 text-slate-600" title="Cap per module. 0 = unlimited.">ⓘ</span>
+            </label>
+            <input type="number" name="max_attack_time" id="cfg_attack_time"
+                   min="0" max="3600" value="60"
+                   class="form-input text-sm py-2"/>
+            <p class="mt-1 text-xs text-slate-600">0 = no limit</p>
+          </div>
+
+          <!-- Parallel Tasks -->
+          <div class="sm:col-span-2">
+            <label class="mb-1 block text-xs font-semibold text-slate-400">
+              Parallel Tasks (--tasks)
+              <span class="ml-1 text-slate-600"
+                    title="Internal wapiti async concurrency. Higher = faster but more load.">ⓘ</span>
+            </label>
+            <input type="range" name="tasks" id="cfg_tasks"
+                   min="1" max="32" value="8"
+                   class="w-full accent-sky-500"
+                   oninput="document.getElementById('cfg_tasks_val').textContent = this.value"/>
+            <div class="mt-1 flex justify-between text-xs text-slate-500">
+              <span>1 (light)</span>
+              <span id="cfg_tasks_val" class="font-semibold text-sky-400">8</span>
+              <span>32 (heavy)</span>
+            </div>
+          </div>
+
+        </div>
+      </details>
 
       <!-- Module Grid -->
       <div class="mb-6">
         <div class="mb-3 flex flex-wrap items-center gap-2">
           <span class="text-sm font-semibold text-slate-300">Scan Modules</span>
-          <span id="selectedCount"
-                class="badge bg-slate-700 text-slate-300">0 selected</span>
-
+          <span id="selectedCount" class="badge bg-slate-700 text-slate-300">0 selected</span>
           <button type="button" id="selectSuggested"
                   class="btn-secondary text-xs py-1 px-3 border-sky-600 text-sky-400 hover:bg-sky-900">
             ✨ Auto-Suggest
@@ -74,9 +198,9 @@
       <button type="submit" class="btn-primary w-full justify-center py-3 text-base">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555
-                   7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1
-                   1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0
+                   008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clip-rule="evenodd"/>
         </svg>
         Start Scan
       </button>
@@ -84,7 +208,22 @@
   </div>
 </div>
 
-<!-- ── Recent Scans ──────────────────────────────────────── -->
+<!-- ── Stale Jobs Warning Banner ── -->
+{% if stale_count > 0 %}
+<div class="mb-4 flex items-center justify-between rounded-lg border border-yellow-700
+            bg-yellow-950/40 px-4 py-3 text-sm text-yellow-300">
+  <span>
+    ⚠️ <strong>{{ stale_count }}</strong>
+    job{{ stale_count|pluralize }} stuck in pending/running state.
+  </span>
+  <button id="clearStaleBtn" onclick="clearStale()"
+          class="btn-secondary border-yellow-600 text-yellow-400 hover:bg-yellow-950 text-xs px-4 py-1.5">
+    🧹 Clear All Stale
+  </button>
+</div>
+{% endif %}
+
+<!-- Recent Scans -->
 {% if recent_scans %}
 <section>
   <h3 class="mb-4 text-lg font-semibold text-white">Recent Scans</h3>
@@ -92,11 +231,10 @@
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
-          <tr class="border-b border-slate-700 bg-slate-800/60 text-xs
-                     uppercase tracking-wider text-slate-400">
+          <tr class="border-b border-slate-700 bg-slate-800/60 text-xs uppercase tracking-wider text-slate-400">
             <th class="px-4 py-3 text-left">Target URL</th>
             <th class="px-4 py-3 text-left">Status</th>
-            <th class="px-4 py-3 text-left">Modules</th>
+            <th class="px-4 py-3 text-left">Config</th>
             <th class="px-4 py-3 text-left">Date</th>
             <th class="px-4 py-3 text-left">Action</th>
           </tr>
@@ -104,26 +242,29 @@
         <tbody class="divide-y divide-slate-700/60">
           {% for scan in recent_scans %}
           <tr class="hover:bg-slate-800/40 transition">
-            <td class="max-w-xs truncate px-4 py-3 font-medium text-slate-200">
-              {{ scan.target_url }}
-            </td>
+            <td class="max-w-xs truncate px-4 py-3 font-medium text-slate-200">{{ scan.target_url }}</td>
             <td class="px-4 py-3">
               <span class="badge badge-{{ scan.status }}">{{ scan.status }}</span>
             </td>
-            <td class="px-4 py-3 text-slate-400">
-              {% if scan.modules %}
-                {{ scan.modules|join:", " }}
-              {% else %}
-                <span class="text-slate-600">all</span>
-              {% endif %}
+            <td class="px-4 py-3 text-xs text-slate-500">
+              d={{ scan.scan_depth }} · t={{ scan.max_scan_time }}s · {{ scan.scope }}
             </td>
-            <td class="px-4 py-3 text-slate-400">
-              {{ scan.created_at|date:"Y-m-d H:i" }}
-            </td>
-            <td class="px-4 py-3">
+            <td class="px-4 py-3 text-slate-400">{{ scan.created_at|date:"Y-m-d H:i" }}</td>
+            <td class="px-4 py-3 flex gap-2 flex-wrap">
               <a href="{% url 'scan_detail' scan.id %}"
                  class="btn-secondary py-1 px-3 text-xs">View</a>
+              {% if scan.status == 'pending' or scan.status == 'running' %}
+              <button onclick="cancelScan('{{ scan.id }}')"
+                      class="btn-secondary py-1 px-3 text-xs border-red-700
+                             text-red-400 hover:bg-red-950"
+                      id="cancel-{{ scan.id }}">
+                ✕ Cancel
+              </button>
+              {% endif %}
             </td>
+            {% comment %} <td class="px-4 py-3">
+              <a href="{% url 'scan_detail' scan.id %}" class="btn-secondary py-1 px-3 text-xs">View</a>
+            </td> {% endcomment %}
           </tr>
           {% endfor %}
         </tbody>
@@ -141,7 +282,67 @@
 
 {% block scripts %}
 <script>
-/* ── Module checkbox counter ── */
+/* ── Presets ── */
+const PRESETS = {
+  quick:    { scope:'page',   depth:1, links:10, scan_time:120,  attack_time:30,  tasks:12, level:'1' },
+  standard: { scope:'folder', depth:2, links:20, scan_time:300,  attack_time:60,  tasks:8,  level:'1' },
+  deep:     { scope:'folder', depth:3, links:50, scan_time:900,  attack_time:180, tasks:6,  level:'2' },
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  document.getElementById('cfg_scope').value       = p.scope;
+  document.getElementById('cfg_depth').value       = p.depth;
+  document.getElementById('cfg_links').value       = p.links;
+  document.getElementById('cfg_scan_time').value   = p.scan_time;
+  document.getElementById('cfg_attack_time').value = p.attack_time;
+  document.getElementById('cfg_tasks').value       = p.tasks;
+  document.getElementById('cfg_tasks_val').textContent = p.tasks;
+  document.getElementById('cfg_level').value       = p.level;
+  // Auto-open the details panel so user can see applied values
+  document.getElementById('advancedConfig').open   = true;
+}
+
+/* ── Cancel single scan ── */
+function cancelScan(scanId) {
+  if (!confirm('Cancel this scan?')) return;
+  fetch(`/scan/${scanId}/cancel/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+  })
+  .then(r => r.json())
+  .then(data => {
+    const badge  = document.getElementById('status-' + scanId);
+    const btn    = document.getElementById('cancel-' + scanId);
+    if (badge) { badge.textContent = data.status; badge.className = 'badge badge-failed'; }
+    if (btn)   { btn.remove(); }
+  });
+}
+
+/* ── Clear all stale ── */
+function clearStale() {
+  if (!confirm('Reset ALL pending/running jobs to failed and purge the Celery queue?')) return;
+  const btn = document.getElementById('clearStaleBtn');
+  if (btn) { btn.textContent = 'Clearing…'; btn.disabled = true; }
+
+  fetch('/api/clear-stale/', {
+    method: 'POST',
+    headers: { 'X-CSRFToken': getCsrf() },
+  })
+  .then(r => r.json())
+  .then(data => {
+    alert(data.message);
+    window.location.reload();
+  });
+}
+
+function getCsrf() {
+  return document.cookie.split(';')
+    .find(c => c.trim().startsWith('csrftoken='))
+    ?.split('=')[1] || '';
+}
+
+/* ── Module checkboxes ── */
 const checkboxes = document.querySelectorAll('.module-checkbox');
 
 function updateCount() {
@@ -151,10 +352,10 @@ function updateCount() {
 checkboxes.forEach(c => c.addEventListener('change', updateCount));
 updateCount();
 
-function selectAll()  { checkboxes.forEach(c => c.checked = true);  updateCount(); }
-function clearAll()   { checkboxes.forEach(c => c.checked = false); updateCount(); }
+function selectAll() { checkboxes.forEach(c => c.checked = true);  updateCount(); }
+function clearAll()  { checkboxes.forEach(c => c.checked = false); updateCount(); }
 
-/* ── Auto-suggest via AJAX ── */
+/* ── Auto-suggest modules ── */
 let debounce;
 document.getElementById('targetUrl').addEventListener('input', function () {
   clearTimeout(debounce);

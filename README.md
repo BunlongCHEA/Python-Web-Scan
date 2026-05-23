@@ -84,3 +84,16 @@ celery -A wapiti_web worker --loglevel=info
 ```bash
 python manage.py runserver 8080
 ```
+
+### 6. Cancel Scan and Purge Queue command
+
+```bash
+# Reset ALL stuck jobs
+python manage.py cleanup_scans
+
+# Reset + purge Celery queue
+python manage.py cleanup_scans --purge-queue
+
+# Only reset jobs stuck longer than 10 minutes
+python manage.py cleanup_scans --older-than 10 --purge-queue
+```

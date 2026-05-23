@@ -1,7 +1,6 @@
 import os
 import json
 import subprocess
-import tempfile
 
 from celery import shared_task
 from django.conf import settings
@@ -13,8 +12,8 @@ from .utils import WAPITI_MODULES
 # ── Synchronous runner (used by threading in views.py) ───────────────────
 def run_scan_sync(scan_id: str):
     """
-    Runs wapiti3 synchronously in a background thread.
-    No Celery / Redis required.
+    Runs wapiti3 synchronously.
+    All cmd parameters read from the ScanJob model — no hardcoded values.
     """
     # from .models import ScanJob, Vulnerability
 
@@ -25,24 +24,52 @@ def run_scan_sync(scan_id: str):
     report_path = os.path.join(settings.SCAN_REPORTS_DIR, f"{scan_id}.json")
     modules = ','.join(job.modules) if job.modules else 'all'
 
-    cmd = [
-        'wapiti',
-        '-u', job.target_url,
-        '-m', modules,
-        '-f', 'json',
-        '-o', report_path,
-        '--flush-session',
-        '-d', '3',
-        '--max-links-per-page', '50',
-        '--max-scan-time', '3600',
-    ]
+    # ── Build cmd from model config fields ────────────────────────────
+    cmd = ['wapiti', '-u', job.target_url]
+
+    # Modules
+    cmd += ['-m', modules]
+
+    # Scope
+    cmd += ['--scope', job.scope]
+
+    # Crawl depth
+    cmd += ['-d', str(job.scan_depth)]
+
+    # Max links per page
+    cmd += ['--max-links-per-page', str(job.max_links)]
+
+    # Attack level
+    cmd += ['-l', str(job.level)]
+
+    # Parallel tasks (speeds up crawling significantly)
+    cmd += ['--tasks', str(job.tasks)]
+
+    # Max scan time (0 = no limit)
+    if job.max_scan_time > 0:
+        cmd += ['--max-scan-time', str(job.max_scan_time)]
+
+    # Max attack time per module (0 = no limit)
+    if job.max_attack_time > 0:
+        cmd += ['--max-attack-time', str(job.max_attack_time)]
+
+    # Output format
+    cmd += ['-f', 'json', '-o', report_path]
+
+    # Always flush session so re-runs start fresh
+    cmd += ['--flush-session']
+
+    # ──────────────────────────────────────────────────────────────────
+
+    # Timeout = max_scan_time + 60s grace, or 600s fallback
+    timeout = (job.max_scan_time + 60) if job.max_scan_time > 0 else 600
 
     try:
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
-            timeout=3600,
+            timeout=timeout,
         )
 
         if result.returncode != 0:
@@ -62,7 +89,7 @@ def run_scan_sync(scan_id: str):
 
     except subprocess.TimeoutExpired:
         job.status = 'failed'
-        job.error_msg = 'Scan timed out after 6 minutes.'
+        job.error_msg = f'Scan timed out after {timeout}s.'
         job.save()
     except Exception as exc:
         job.status = 'failed'

@@ -19,6 +19,7 @@ def index(request):
         'recent_scans': recent_scans,
         'all_modules': WAPITI_MODULES,
         'suggested_modules': [],
+        'scope_choices': ScanJob.SCOPE_CHOICES,
     }
     return render(request, 'scanner/index.html', context)
 
@@ -29,25 +30,25 @@ def start_scan(request):
     if not target_url:
         return redirect('index')
 
-    selected_modules = request.POST.getlist('modules')
+    def _int(key, default, min_val=0, max_val=9999):
+        try:
+            return max(min_val, min(max_val, int(request.POST.get(key, default))))
+        except (ValueError, TypeError):
+            return default
 
     job = ScanJob.objects.create(
-        target_url=target_url,
-        modules=selected_modules,
+        target_url    = target_url,
+        modules       = request.POST.getlist('modules'),
+        scan_depth    = _int('scan_depth',    2, 1, 10),
+        max_links     = _int('max_links',    20, 1, 500),
+        max_scan_time = _int('max_scan_time', 180, 0, 86400),
+        max_attack_time = _int('max_attack_time', 60, 0, 3600),
+        tasks         = _int('tasks',         8, 1, 32),
+        scope         = request.POST.get('scope', 'folder'),
+        level         = _int('level',          1, 1, 2),
     )
-    
-    # Use Celery for real async processing (requires Redis broker)
+
     run_wapiti_scan.delay(str(job.id))
-
-    # Use threading for no broker connection needed
-    # from .tasks import run_scan_sync
-    # thread = threading.Thread(
-    #     target=run_scan_sync,
-    #     args=(str(job.id),),
-    #     daemon=True,
-    # )
-    # thread.start()
-
     return redirect('scan_running', scan_id=job.id)
 
 
@@ -87,6 +88,50 @@ def suggest_modules_api(request):
     url = request.GET.get('url', '')
     suggested = suggest_modules(url)
     return JsonResponse({'suggested': suggested})
+
+
+# ── Cancel a single job ───────────────────────────────────────────────────
+
+@require_POST
+def cancel_scan(request, scan_id):
+    """Mark a single pending/running job as failed immediately."""
+    job = get_object_or_404(ScanJob, id=scan_id)
+    if job.status in ('pending', 'running'):
+        job.status = 'failed'
+        job.error_msg = 'Cancelled by user.'
+        job.save()
+        # Attempt to revoke Celery task (best-effort)
+        try:
+            from celery import current_app
+            current_app.control.revoke(str(job.id), terminate=True)
+        except Exception:
+            pass
+    return JsonResponse({'status': job.status, 'scan_id': str(job.id)})
+
+
+# ── Clear ALL stale (pending/running) jobs ───────────────────────────────
+
+@require_POST
+def clear_stale_scans(request):
+    """Reset all pending/running jobs to failed + purge Celery queue."""
+    qs = ScanJob.objects.filter(status__in=['pending', 'running'])
+    count = qs.count()
+    qs.update(status='failed', error_msg='Cleared by user via UI.')
+
+    # Purge Celery queue (best-effort)
+    purged = False
+    try:
+        from celery import current_app
+        current_app.control.purge()
+        purged = True
+    except Exception:
+        pass
+
+    return JsonResponse({
+        'cleared': count,
+        'queue_purged': purged,
+        'message': f'{count} stale job(s) cleared. Queue purged: {purged}',
+    })
 
 
 # ── Report Downloads ─────────────────────────────────────────────────────
