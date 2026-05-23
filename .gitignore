@@ -9,3 +9,6 @@ scan_reports/
 scanner/__pycache__/
 scanner/migrations/__pycache__/
 wapiti_web/__pycache__/
+scanner/migrations/000*.py
+scanner/management/commands/__pycache__/
+scanner/management/__pycache__/
