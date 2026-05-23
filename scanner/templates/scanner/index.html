@@ -35,15 +35,15 @@
         <div class="flex flex-wrap gap-2">
           <button type="button" onclick="applyPreset('quick')"
                   class="btn-secondary text-xs px-4 py-1.5 border-green-700 text-green-400 hover:bg-green-950">
-            ⚡ Quick (2 min)
+            ⚡ Quick (10 min)
           </button>
           <button type="button" onclick="applyPreset('standard')"
                   class="btn-secondary text-xs px-4 py-1.5 border-sky-700 text-sky-400 hover:bg-sky-950">
-            🔍 Standard (5 min)
+            🔍 Standard (20 min)
           </button>
           <button type="button" onclick="applyPreset('deep')"
                   class="btn-secondary text-xs px-4 py-1.5 border-orange-700 text-orange-400 hover:bg-orange-950">
-            🔬 Deep (15 min)
+            🔬 Deep (30 min)
           </button>
         </div>
         <p class="mt-1.5 text-xs text-slate-600">Presets auto-fill the advanced config below.</p>
@@ -284,9 +284,9 @@
 <script>
 /* ── Presets ── */
 const PRESETS = {
-  quick:    { scope:'page',   depth:1, links:10, scan_time:120,  attack_time:30,  tasks:12, level:'1' },
-  standard: { scope:'folder', depth:2, links:20, scan_time:300,  attack_time:60,  tasks:8,  level:'1' },
-  deep:     { scope:'folder', depth:3, links:50, scan_time:900,  attack_time:180, tasks:6,  level:'2' },
+  quick:    { scope:'page',   depth:1, links:10, scan_time:600,  attack_time:30,  tasks:12, level:'1' },
+  standard: { scope:'folder', depth:2, links:20, scan_time:1200,  attack_time:60,  tasks:8,  level:'1' },
+  deep:     { scope:'folder', depth:3, links:50, scan_time:1800,  attack_time:180, tasks:6,  level:'2' },
 };
 
 function applyPreset(name) {

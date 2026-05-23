@@ -77,11 +77,11 @@ class Vulnerability(models.Model):
     scan        = models.ForeignKey(ScanJob, on_delete=models.CASCADE, related_name='vulnerabilities')
     name        = models.CharField(max_length=200)
     severity    = models.CharField(max_length=20, choices=SEVERITY_CHOICES, default='info')
-    url         = models.URLField(max_length=1000)
+    url         = models.URLField(max_length=1000, blank=True, default='')  # ← added blank/default
     method      = models.CharField(max_length=10, default='GET')
-    parameter   = models.CharField(max_length=200, blank=True)
-    description = models.TextField(blank=True)
-    wstg        = models.CharField(max_length=50, blank=True)
+    parameter   = models.CharField(max_length=200, blank=True, null=True, default='')  # ← null=True
+    description = models.TextField(blank=True, null=True, default='')                  # ← null=True
+    wstg        = models.CharField(max_length=50, blank=True, null=True, default='')   # ← null=True
 
     def __str__(self):
         return f"[{self.severity.upper()}] {self.name} @ {self.url}"
